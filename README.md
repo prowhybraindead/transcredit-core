@@ -35,95 +35,69 @@ Merchant (Demo_Shop) ──POST──▶ /api/external/transaction ──▶ Fir
 ### 1. Create a Firebase Project
 
 1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Click **"Add project"**
-3. Enter a project name (e.g., `transapp-dev`)
-4. Disable Google Analytics (optional for dev)
-5. Click **"Create project"**
+2. Click **"Add project"** → name it (e.g., `transapp-dev`)
+3. Disable Google Analytics (optional) → **"Create project"**
 
 ### 2. Enable Authentication
 
-1. In the Firebase Console sidebar, click **"Authentication"**
-2. Click **"Get started"**
-3. Go to the **"Sign-in method"** tab
-4. Enable **"Email/Password"**
-5. Also enable **"Anonymous"** (for flexibility)
-6. Click **"Save"**
+1. Sidebar → **"Authentication"** → **"Get started"**
+2. **"Sign-in method"** tab → Enable **"Email/Password"** + **"Anonymous"**
 
-### 3. Enable Firestore Database
+### 3. Enable Firestore
 
-1. In the sidebar, click **"Firestore Database"**
-2. Click **"Create database"**
-3. Select **"Start in test mode"** (for development)
-4. Choose a region close to you (e.g., `asia-southeast1`)
-5. Click **"Enable"**
+1. Sidebar → **"Firestore Database"** → **"Create database"**
+2. Select **"Start in test mode"** → Choose region → **"Enable"**
 
 ### 4. Get Client API Keys
 
-1. Click the **gear icon** ⚙️ next to "Project Overview" → **"Project settings"**
-2. Scroll down to **"Your apps"**
-3. If no app exists, click **"Add app"** → Choose **Web** (</> icon)
-4. Enter an app nickname (e.g., `transapp-web`)
-5. Click **"Register app"**
-6. You'll see the Firebase config object:
-   ```javascript
-   const firebaseConfig = {
-     apiKey: "AIza...",
-     authDomain: "your-project.firebaseapp.com",
-     projectId: "your-project-id",
-     storageBucket: "your-project.appspot.com",
-     messagingSenderId: "123456789",
-     appId: "1:123456789:web:abc..."
-   };
+1. ⚙️ **"Project Settings"** → Scroll to **"Your apps"**
+2. Click **"Add app"** → **Web** (</>) → Register
+3. Copy the `firebaseConfig` values for your `.env.local`
+
+### 5. Generate Service Account JSON
+
+> ⚠️ **Required only for TransCredit Core** (Admin SDK for server-side Firestore).
+
+1. **"Project Settings"** → **"Service accounts"** tab
+2. **"Generate new private key"** → Download JSON
+3. Copy entire JSON content as a single line:
+   ```bash
+   cat your-service-account.json | jq -c .
    ```
-7. Copy these values — you'll need them for the `.env.local` file
-
-### 5. Generate Service Account JSON (Required for Core)
-
-> ⚠️ **This step is ONLY needed for TransCredit Core** (it uses the Admin SDK for server-side operations).
-
-1. In Project Settings, go to the **"Service accounts"** tab
-2. Click **"Generate new private key"**
-3. A JSON file will download — it contains your service credentials
-4. **Keep this file safe** — do NOT commit it to git
-5. Copy the **entire JSON content** as a single line for the environment variable
 
 ---
 
 ## ⚙️ Environment Variables
 
-Create a file named `.env.local` in the project root:
+Copy `.env.local.example` → `.env.local`:
 
 ```env
-# Firebase Client SDK (for Payment page real-time listener)
-NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+# Firebase Client SDK
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+NEXT_PUBLIC_FIREBASE_APP_ID=...
 
-# Firebase Admin SDK (paste entire JSON as a single line)
-FIREBASE_SERVICE_ACCOUNT={"type":"service_account","project_id":"...","private_key":"...","client_email":"..."}
+# Firebase Admin SDK (entire JSON as single line)
+FIREBASE_SERVICE_ACCOUNT={"type":"service_account",...}
+
+# Public base URL (for paymentUrl generation)
+NEXT_PUBLIC_API_URL=http://localhost:3000
+
+# CORS allowed origin (Demo Shop URL)
+ALLOWED_ORIGIN=http://localhost:3001
 ```
-
-> 💡 **Tip:** To convert the downloaded JSON file to a single line, you can use:
-> ```bash
-> cat your-service-account.json | jq -c .
-> ```
 
 ---
 
 ## 🚀 Installation & Running
 
 ```bash
-# Install dependencies
 npm install
-
-# Start the development server (port 3000)
-npm run dev
+npm run dev     # http://localhost:3000
 ```
-
-The server will be available at: **http://localhost:3000**
 
 ---
 
@@ -131,17 +105,12 @@ The server will be available at: **http://localhost:3000**
 
 ### `POST /api/external/transaction`
 
-Creates a new pending payment transaction.
-
-**Request Body:**
-```json
-{
-  "amount": 30000,
-  "orderInfo": "Premium Coffee",
-  "returnUrl": "http://localhost:3001/success",
-  "apiKey": "TRANS_KEY_V1"
-}
-```
+| Field       | Type   | Required | Description            |
+|-------------|--------|----------|------------------------|
+| `amount`    | number | ✅       | Payment amount (VND)   |
+| `orderInfo` | string | ✅       | Order description      |
+| `returnUrl` | string | ✅       | Redirect after success |
+| `apiKey`    | string | ✅       | `TRANS_KEY_V1`         |
 
 **Response (201):**
 ```json
@@ -152,12 +121,23 @@ Creates a new pending payment transaction.
 }
 ```
 
-**Error Responses:**
-- `400` — Missing required fields or invalid amount
-- `401` — Invalid API key
-- `500` — Internal server error
+---
 
-**API Key:** `TRANS_KEY_V1` (hardcoded for development)
+## 🚢 Deployment (Vercel)
+
+1. **Push this repo to GitHub**
+2. **Import to Vercel** at [vercel.com/new](https://vercel.com/new)
+3. **Add Environment Variables** in Vercel Dashboard → Settings → Environment Variables:
+   - All `NEXT_PUBLIC_FIREBASE_*` keys
+   - `FIREBASE_SERVICE_ACCOUNT` (the entire JSON as a single line)
+   - `NEXT_PUBLIC_API_URL` → Set to your Vercel deployment URL (e.g., `https://transcredit-core.vercel.app`)
+   - `ALLOWED_ORIGIN` → Set to the Demo Shop's production URL (e.g., `https://demo-shop.vercel.app`)
+4. **Deploy** → Vercel will auto-build and deploy
+
+> [!IMPORTANT]
+> After deploying Core, copy the Vercel URL and update:
+> - **Demo_Shop** → `NEXT_PUBLIC_CORE_API_URL` in its Vercel env vars
+> - **HotWave_Wallet** → If it calls Core directly in the future
 
 ---
 
@@ -171,10 +151,9 @@ TransCredit_Core/
 │   ├── pay/[id]/
 │   │   └── page.tsx          # Checkout page with QR code
 │   ├── layout.tsx
-│   ├── page.tsx
 │   └── globals.css
 ├── lib/
-│   ├── firebaseAdmin.ts      # Firebase Admin SDK (server)
+│   ├── firebaseAdmin.ts      # Firebase Admin SDK (lazy init)
 │   └── firebaseClient.ts     # Firebase Client SDK (client)
 ├── .env.local.example
 ├── LICENSE

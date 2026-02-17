@@ -2,13 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 
 const VALID_API_KEY = "TRANS_KEY_V1";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "http://localhost:3001";
 
 // Handle CORS preflight
 export async function OPTIONS() {
     return new NextResponse(null, {
         status: 204,
         headers: {
-            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
             "Access-Control-Allow-Methods": "POST, OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type",
         },
@@ -17,7 +19,7 @@ export async function OPTIONS() {
 
 export async function POST(req: NextRequest) {
     const corsHeaders = {
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
         "Access-Control-Allow-Methods": "POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type",
     };
@@ -63,7 +65,7 @@ export async function POST(req: NextRequest) {
 
         await transactionRef.set(transactionData);
 
-        const paymentUrl = `http://localhost:3000/pay/${transactionRef.id}`;
+        const paymentUrl = `${BASE_URL}/pay/${transactionRef.id}`;
 
         return NextResponse.json(
             {
